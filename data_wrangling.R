@@ -1,7 +1,34 @@
-require(tidyverse)
-require(janitor)
-require(lubridate)
-require(plotly)
+# require(tidyverse)
+# require(janitor)
+# require(lubridate)
+# require(plotly)
+# library(hrbrthemes)
+
+#automatic install of packages if they are not installed already
+list.of.packages <- c(
+  "janitor",
+  "ggplot2",
+  "tidyverse",
+  "lubridate",
+  "plotly",
+  "hrbrthemes"
+)
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+
+if(length(new.packages) > 0){
+  install.packages(new.packages, dep=TRUE)
+}
+
+#loading packages
+for(package.i in list.of.packages){
+  suppressPackageStartupMessages(
+    library(
+      package.i,
+      character.only = TRUE
+    )
+  )
+}
 
 # # Importing the data
 # # First define the path where the data is stored
@@ -30,6 +57,7 @@ df_raw <- read_csv('river-historical-1986_2020-en.csv')
 # Basic cleaning
 df <- df_raw %>%
   clean_names() %>% 
+  filter(!is.na(river)) %>% 
   subset(select = c(water_control_zone, 
                     river, 
                     station, 
@@ -197,7 +225,7 @@ river <- df2 %>%
   # filter(year>= 2010)
          
 p <- river %>% 
-  filter(water_control_zone == 'Deep Bay') %>% 
+  # filter(water_control_zone == 'Deep Bay') %>% 
   ggplot(aes(x = year, y = wqi, color = river)) +
   geom_line() +
   theme_bw()
@@ -207,3 +235,51 @@ ggplotly(p)
 
 
 
+# Heat Map
+
+wide <- river %>% 
+  spread(year, wqi)
+
+wide$average <- round(rowMeans(subset(wide, select = -c(water_control_zone, river)), na.rm = TRUE))
+
+wide <- wide %>% 
+  # mutate(quality = case_when(
+  #   average >= 0 & average < 45 ~ 'good',
+  #   average >= 45 & average < 60 ~ 'fair',
+  #   average >= 60	~ 'poor'
+  # )) %>% 
+  arrange(average)
+
+long <- wide %>% 
+  # Just a place holder to create gap in viz
+  add_column('2021' = NA) %>% 
+  pivot_longer(cols = !c(water_control_zone, river), names_to = 'year', values_to = 'wqi')
+
+order <- c(rev(unique(long$river)))
+
+x_label <- c()
+for (i in 1990:2020) {
+  if (i %% 5 == 0) {
+    x_label <- append(x_label, i)
+  } else {
+    x_label <- append(x_label, "")
+  }
+}
+
+h <- ggplot(mapping = aes(x = year, y = river)) +
+  geom_tile(aes(fill = wqi), long) +
+  geom_text(aes(label = wqi), subset(long, year == "average")) +
+  scale_fill_gradient(low="white", high="brown") +
+  scale_x_discrete(limits = c(1990:2021, "average"), labels = c(x_label, "", "average"), position = "top") +
+  scale_y_discrete(limits = order) +
+  theme_bw()
+
+h + 
+  theme(
+  legend.position="none"
+  ) +
+  labs(
+    title = "test",
+    x = NULL,
+    y = "River"
+  )
