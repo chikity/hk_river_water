@@ -303,12 +303,13 @@ categorized <- wide %>%
 p <- categorized %>%
   group_by(quality) %>%
   tally() %>%
-  ggplot(mapping = aes(x = reorder(quality, -n), y = n, fill = n)) +
+  ggplot(mapping = aes(x = reorder(quality, -n), y = n, fill = quality)) +
+  scale_fill_manual(values = c("orange", "turquoise", "chocolate4")) +
   geom_bar(width = 1, stat = "identity") + 
   # coord_polar("y", start=0) +
   # xlim(c(2, 4)) +
-  geom_text(aes(y = n/3 + c(0, cumsum(n)[-length(n)]), 
-                label = paste(round(n/sum(n)*100, 2),"%"), size=5)) +
+  geom_text(aes(y = n-1, label = paste(round(n/sum(n)*100, 2),"%"), size=50)) +
+  geom_text(aes(y = n+1, label = n, size=50)) +
   theme_bw()
 
 p + 
@@ -320,6 +321,7 @@ p +
     # plot.caption = element_text(size = 12),
     # axis.text = element_blank(),
     axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
     panel.border = element_blank(),
     legend.position = "none"
   ) +
