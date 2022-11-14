@@ -269,17 +269,45 @@ for (i in 1990:2020) {
 h <- ggplot(mapping = aes(x = year, y = river)) +
   geom_tile(aes(fill = wqi), long) +
   geom_text(aes(label = wqi), subset(long, year == "average")) +
-  scale_fill_gradient(low="white", high="brown") +
   scale_x_discrete(limits = c(1990:2021, "average"), labels = c(x_label, "", "average"), position = "top") +
   scale_y_discrete(limits = order) +
   theme_bw()
 
 h + 
+  scale_fill_gradient(low="green", high="red", na.value = NA) +
+  # scale_fill_viridis_c(option = "magma", na.value = NA) +
+  # scale_fill_manual(name = "wqi", values = c("green", "yellow", "red"), labels = c("0-45", "46-60", "60-100"), na.value = NA) +
+  guides(colour = guide_colorbar(reverse = TRUE)) +
   theme(
-  legend.position="none"
+  # legend.position="none"
   ) +
   labs(
-    title = "test",
+    title = "Hong Kong River Water Quality Index Scores from 1986 - 2020",
+    subtitle = "The lower the better",
+    caption = "Environment Protection Department - Hong Kong | DATA.GOV.HK",
     x = NULL,
-    y = "River"
+    y = "Rivers"
   )
+
+ggplotly(h)
+
+
+
+category <- wide %>%
+  mutate(quality = case_when(
+    average >= 0 & average < 45 ~ 'good',
+    average >= 45 & average < 60 ~ 'fair',
+    average >= 60	~ 'poor'
+  ))
+
+pie <- category %>%
+  group_by(quality) %>%
+  tally() %>%
+  ggplot(mapping = aes(x = "", y = n, fill = quality)) +
+  geom_bar(width = 1, stat = "identity") + 
+  coord_polar("y", start=0) +
+  theme(axis.text.x=element_blank()) +
+  geom_text(aes(y = n/3 + c(0, cumsum(n)[-length(n)]), 
+                label = paste(round(n/sum(n)*100, 2),"%"), size=5))
+
+pie
