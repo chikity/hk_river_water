@@ -284,7 +284,7 @@ h +
   labs(
     title = "Hong Kong River Water Quality Index Scores from 1986 - 2020",
     subtitle = "The lower the better",
-    caption = "Environment Protection Department - Hong Kong | DATA.GOV.HK",
+    caption = "Data from Hong Kong Environment Protection Department | DATA.GOV.HK | Visualized by Chi Kit Yeung",
     x = NULL,
     y = "Rivers"
   )
@@ -293,21 +293,70 @@ ggplotly(h)
 
 
 
-category <- wide %>%
+categorized <- wide %>%
   mutate(quality = case_when(
     average >= 0 & average < 45 ~ 'good',
     average >= 45 & average < 60 ~ 'fair',
     average >= 60	~ 'poor'
   ))
 
-pie <- category %>%
+p <- categorized %>%
   group_by(quality) %>%
   tally() %>%
-  ggplot(mapping = aes(x = "", y = n, fill = quality)) +
+  ggplot(mapping = aes(x = reorder(quality, -n), y = n, fill = n)) +
   geom_bar(width = 1, stat = "identity") + 
-  coord_polar("y", start=0) +
-  theme(axis.text.x=element_blank()) +
+  # coord_polar("y", start=0) +
+  # xlim(c(2, 4)) +
   geom_text(aes(y = n/3 + c(0, cumsum(n)[-length(n)]), 
-                label = paste(round(n/sum(n)*100, 2),"%"), size=5))
+                label = paste(round(n/sum(n)*100, 2),"%"), size=5)) +
+  theme_bw()
 
-pie
+p + 
+  #   theme_bw() +
+  theme(
+    panel.grid = element_blank(),
+    # title = element_text(size = 20, face = "bold"),
+    # plot.subtitle = element_text(size = 15, face = "bold"),
+    # plot.caption = element_text(size = 12),
+    # axis.text = element_blank(),
+    axis.text.y = element_blank(),
+    panel.border = element_blank(),
+    legend.position = "none"
+  ) +
+  labs(
+    title = "Overview of Hong Kong River's Quality",
+    subtitle = "WQI scores averaged with data from 1986 to 2020",
+    caption = "Data from Environment Protection Department - Hong Kong | DATA.GOV.HK | Visualized by Chi Kit Yeung",
+    x = NULL,
+    y = NULL
+  )
+
+
+
+b <- river %>% 
+  filter(year == 2020) %>% 
+  ggplot(mapping = aes(y = reorder(river, -wqi), x = wqi, fill = wqi)) +
+  geom_col() +
+  geom_text(aes(label = wqi, x = wqi+2))
+
+b + 
+  scale_fill_gradient(low="turquoise", high="brown", na.value = NA) +
+  guides(colour = guide_colorbar(reverse = TRUE)) +
+  theme_bw() +
+  theme(
+    # title = element_text(size = 20, face = "bold"),
+    # plot.subtitle = element_text(size = 15, face = "bold"),
+    # plot.caption = element_text(size = 12),
+    # axis.text.y = element_text(size = 14),
+    # axis.text.x = element_text(size = 12, face = "bold"),
+    panel.grid.major.y = element_blank(),
+    legend.position = "none"
+  ) +
+  labs(
+    title = "Water Quality Index Scores of Hong Kong's Rivers for 2020",
+    subtitle = "Sorted by average WQI scores.  The lower the better.",
+    caption = "Data from Hong Kong Environment Protection Department | DATA.GOV.HK | Visualized by Chi Kit Yeung",
+    x = NULL,
+    y = "Rivers"
+  )
+
